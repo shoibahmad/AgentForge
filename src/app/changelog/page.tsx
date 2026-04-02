@@ -130,7 +130,7 @@ export default function ChangelogPage() {
               <motion.div key={release.version} custom={ri} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
                 style={{ display: "flex", gap: "1.75rem", marginBottom: "3rem", position: "relative" }}>
                 {/* Icon */}
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: release.color + "18", border: `1px solid ${release.color}44`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1, background: "var(--bg-primary)" as string }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${release.color}44`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1, background: "var(--bg-primary)" }}>
                   <Icon size={16} color={release.color} />
                 </div>
 

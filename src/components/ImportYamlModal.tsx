@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useAgent, AgentState, initialState as _unused } from "@/lib/AgentContext";
+import { useAgent, AgentState } from "@/lib/AgentContext";
 import { X, Upload, FileText, AlertTriangle } from "lucide-react";
 
 // Minimal YAML parser for agent.yaml structure

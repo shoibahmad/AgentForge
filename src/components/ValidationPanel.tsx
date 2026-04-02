@@ -162,7 +162,7 @@ export default function ValidationPanel({ onJumpToStep }: { onJumpToStep: (step:
             padding: "0.1rem 0.45rem",
             borderRadius: "4px",
           }}>
-            gitclaw validate
+            npx gitagent validate
           </span>
         </div>
         <button

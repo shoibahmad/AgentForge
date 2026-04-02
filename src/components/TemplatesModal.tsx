@@ -1,7 +1,6 @@
 "use client";
 
-import { AGENT_TEMPLATES, AgentTemplate } from "@/lib/AgentContext";
-import { useAgent } from "@/lib/AgentContext";
+import { AGENT_TEMPLATES, AgentTemplate, useAgent } from "@/lib/AgentContext";
 import { X, Layers } from "lucide-react";
 
 export default function TemplatesModal({ onClose }: { onClose: () => void }) {

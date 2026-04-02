@@ -44,7 +44,7 @@ const features = [
   {
     icon: GitBranch,
     title: "gitclaw Compatible",
-    desc: "Run your agent instantly with `gitclaw run` or deploy with `clawless deploy`.",
+    desc: "Turn your repo into a running agent with `npm install gitclaw`. Deploy serverlessly with `npm install clawless`.",
     color: "var(--accent-green)",
   },
   {
@@ -63,7 +63,7 @@ const concepts = [
   },
   {
     name: "gitclaw",
-    desc: "The runtime that executes gitagent repos. Run `gitclaw run` in any agent directory to spin up your agent.",
+    desc: "The SDK runtime that turns your gitagent repo into a running agent. Install with `npm install gitclaw` and use the SDK API to bring your agent to life.",
     color: "#ffb800",
   },
   {
@@ -215,14 +215,14 @@ export default function LandingPage() {
                 <div key={c} style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
               ))}
             </div>
-            <div><span className="terminal-comment"># Clone your generated agent</span></div>
-            <div><span className="terminal-prompt">$ </span><span className="terminal-cmd">gitclaw validate ./my-agent</span></div>
+            <div><span className="terminal-comment"># Validate your generated agent</span></div>
+            <div><span className="terminal-prompt">$ </span><span className="terminal-cmd">npx gitagent validate</span></div>
             <div style={{ color: "var(--accent-green)", paddingLeft: "1rem" }}>✓ agent.yaml valid</div>
             <div style={{ color: "var(--accent-green)", paddingLeft: "1rem" }}>✓ SOUL.md present</div>
             <div style={{ color: "var(--accent-green)", paddingLeft: "1rem" }}>✓ 3 skills loaded</div>
-            <div><span className="terminal-prompt">$ </span><span className="terminal-cmd">gitclaw run ./my-agent</span></div>
-            <div style={{ color: "var(--accent-amber)" }}>⚡ Agent running on localhost:4000</div>
-            <div style={{ marginTop: "0.5rem" }}><span className="terminal-prompt">$ </span><span className="terminal-cmd">clawless deploy ./my-agent<span style={{ animation: "pulse 1s infinite", display: "inline-block" }}>_</span></span></div>
+            <div><span className="terminal-prompt">$ </span><span className="terminal-cmd">npm install gitclaw</span></div>
+            <div style={{ color: "var(--accent-amber)" }}>⚡ gitclaw ready — see README for SDK usage</div>
+            <div style={{ marginTop: "0.5rem" }}><span className="terminal-prompt">$ </span><span className="terminal-cmd">npm install clawless<span style={{ animation: "pulse 1s infinite", display: "inline-block" }}>_</span></span></div>
           </div>
         </motion.div>
       </section>

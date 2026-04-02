@@ -181,9 +181,10 @@ export default function StepGenerate() {
   const agentName = state.name || "my-agent";
   const deployCommands = [
     { comment: "# Unzip your downloaded agent", cmd: `unzip ${agentName}.zip -d ./${agentName}` },
-    { comment: "# Validate the agent spec", cmd: `gitclaw validate ./${agentName}` },
-    { comment: "# Run locally", cmd: `gitclaw run ./${agentName}` },
-    { comment: "# Deploy to serverless cloud", cmd: `clawless deploy ./${agentName}` },
+    { comment: "# Validate the spec (no global install needed)", cmd: `npx gitagent validate` },
+    { comment: "# Get agent info", cmd: `npx gitagent info` },
+    { comment: "# Install gitclaw SDK and run", cmd: `npm install gitclaw` },
+    { comment: "# Deploy serverlessly with clawless", cmd: `npm install clawless` },
   ];
 
   return (

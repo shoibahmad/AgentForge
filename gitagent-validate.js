@@ -240,8 +240,9 @@ if (isValid) {
   console.log(c.green("  ✓ Agent is valid and ready to run."));
   console.log();
   console.log(c.dim("  Next steps:"));
-  console.log(c.dim("    gitclaw run ./" + (path.basename(resolvedPath))));
-  console.log(c.dim("    clawless deploy ./" + (path.basename(resolvedPath))));
+  console.log(c.dim("    npx gitagent info"));
+  console.log(c.dim("    npm install gitclaw"));
+  console.log(c.dim("    npm install clawless"));
 } else {
   console.log(c.red(`  ✗ ${failed} error(s) must be fixed before running.`));
   if (warned > 0) {

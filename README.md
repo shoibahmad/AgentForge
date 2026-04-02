@@ -19,8 +19,8 @@ AgentForge is built around three companion tools that form a complete agent deve
 | Tool | Role |
 |---|---|
 | **gitagent** | The specification format — defines how an AI agent repository is structured (files, frontmatter, schema) |
-| **gitclaw** | The runtime — executes a gitagent repo locally (`gitclaw run ./my-agent`) |
-| **clawless** | The deployment layer — deploys a gitagent repo to a serverless cloud environment |
+| **gitclaw** | The SDK runtime — install with `npm install gitclaw` to turn your gitagent repo into a running agent |
+| **clawless** | The serverless runtime — install with `npm install clawless` to deploy your agent via WebContainers (Node.js/npm only) |
 
 AgentForge is the **visual IDE** that generates a valid gitagent repo without hand-writing any YAML or Markdown.
 
@@ -239,8 +239,8 @@ The validator runs checks across all agent files and produces a colored terminal
 
   ✓ Agent is valid and ready to run.
   Next steps:
-    gitclaw run ./my-agent
-    clawless deploy ./my-agent
+    npm install gitclaw
+    npm install clawless
 ```
 
 ### Exit Codes
@@ -335,6 +335,9 @@ npm run build
 |---|---|
 | `/` | Landing page — hero, feature overview, gitagent/gitclaw/clawless ecosystem explainer |
 | `/build` | The 5-step agent builder |
+| `/docs` | Full reference documentation for the gitagent spec and AgentForge |
+| `/features` | Detailed feature breakdown with comparison table |
+| `/changelog` | Release history |
 
 ---
 
@@ -350,10 +353,10 @@ npm run build
    Expand-Archive my-agent.zip -DestinationPath ./my-agent
 7. Validate locally:
    node gitagent-validate.js ./my-agent
-8. Run with gitclaw (when available):
-   gitclaw run ./my-agent
-9. Deploy with clawless (when available):
-   clawless deploy ./my-agent
+8. Install gitclaw SDK:
+   npm install gitclaw
+9. Deploy serverlessly with clawless (Node.js/npm skills only):
+   npm install clawless
 ```
 
 ---

@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description:
     "A multi-step UI builder for the gitagent format. Define your AI agent's soul, rules, and skills, then download a ready-to-deploy repository.",
   keywords: ["gitagent", "AI agent builder", "gitclaw", "clawless", "agent configuration"],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

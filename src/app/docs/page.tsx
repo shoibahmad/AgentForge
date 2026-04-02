@@ -213,7 +213,7 @@ export default function DocsPage() {
               { step: "02", title: "Fill in each step", desc: "Work through the 5 steps: Manifest → Soul → Rules → Skills → Generate. Each step maps to a specific output file." },
               { step: "03", title: "Validate your agent", desc: "On Step 5, click \"Validate Agent\" to run 20+ checks. Fix any FAIL items before downloading." },
               { step: "04", title: "Download the ZIP", desc: "Click \"Download ZIP\" to get your complete agent repository. Extract it anywhere." },
-              { step: "05", title: "Run with gitclaw", desc: "Navigate into the extracted folder and run `gitclaw run .` to start your agent locally." },
+              { step: "05", title: "Run with gitclaw", desc: "Install gitclaw (`npm install gitclaw`) and use the SDK to bring your agent to life. See the gitclaw README for full API docs." },
             ].map((item, i) => (
               <motion.div key={item.step} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
                 style={{ display: "flex", gap: "1.25rem", marginBottom: "1.25rem", padding: "1.25rem", background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
@@ -228,9 +228,17 @@ export default function DocsPage() {
             ))}
             <CodeBlock>{`# After downloading and extracting your agent ZIP:
 cd my-agent
-gitclaw validate .   # run validation checks
-gitclaw run .        # start the agent locally
-clawless deploy .    # deploy to serverless cloud`}</CodeBlock>
+
+# Validate the spec (uses npx — no global install needed)
+npx gitagent validate
+npx gitagent info
+
+# Install gitclaw and run the agent locally
+npm install gitclaw
+# (use the gitclaw SDK in your project — see gitclaw README)
+
+# Optionally deploy serverlessly with clawless
+npm install clawless`}</CodeBlock>
           </Section>
 
           {/* STEP 1 - MANIFEST */}
@@ -257,10 +265,14 @@ clawless deploy .    # deploy to serverless cloud`}</CodeBlock>
               ))}
             </div>
             <CodeBlock lang="yaml">{`# agent.yaml output example
+spec_version: "0.1.0"
 name: my-coding-assistant
-version: 0.1.0
+version: "0.1.0"
 description: "A focused coding assistant for TypeScript projects"
-model: claude-sonnet-4-5-20250929
+model:
+  preferred: claude-sonnet-4-5-20250929
+skills:
+  - code-review
 tags:
   - coding
   - productivity`}</CodeBlock>
@@ -415,25 +427,27 @@ When reviewing code:
               A complete gitagent repository has the following structure:
             </p>
             <CodeBlock>{`my-agent/
-├── agent.yaml          # Manifest — identity, model, tags
+├── agent.yaml          # Manifest — name, version, model, skills, tags
 ├── SOUL.md             # Personality, communication style, values
 ├── RULES.md            # Must-always and must-never constraints
-└── skills/
-    ├── code-review/
-    │   └── SKILL.md    # Skill instructions + tool permissions
-    └── web-research/
-        └── SKILL.md`}</CodeBlock>
+├── skills/
+│   ├── code-review/
+│   │   └── SKILL.md    # Skill instructions + tool permissions
+│   └── web-research/
+│       └── SKILL.md
+└── tools/              # Optional: tool definitions (YAML schemas)`}</CodeBlock>
 
             <p style={{ color: "var(--text-secondary)", lineHeight: 1.8, margin: "1.5rem 0 0.75rem" }}>Full <Badge color="var(--accent-amber)">agent.yaml</Badge> schema:</p>
-            <CodeBlock lang="yaml">{`name: string          # required — lowercase-hyphen slug
-version: string       # required — semver (e.g. 0.1.0)
+            <CodeBlock lang="yaml">{`spec_version: "0.1.0"
+name: string          # required — lowercase-hyphen slug
+version: "0.1.0"      # required — semver, quoted string
 description: string   # optional — one-line summary
-model: string         # required — claude model id
-tags: string[]        # optional — categorization tags
-soul: SOUL.md         # auto-resolved by gitclaw
-rules: RULES.md       # auto-resolved by gitclaw
-skills:               # auto-resolved from skills/ directory
-  - skills/*/SKILL.md`}</CodeBlock>
+model:                # required
+  preferred: string   # claude model id
+skills:               # optional — list of skill directory names
+  - my-skill
+tags:                 # optional — categorization tags
+  - hackathon`}</CodeBlock>
 
             <p style={{ color: "var(--text-secondary)", lineHeight: 1.8, margin: "1.5rem 0 0.75rem" }}>Full <Badge color="#00d4ff">SKILL.md</Badge> frontmatter schema:</p>
             <CodeBlock lang="yaml">{`---
@@ -453,24 +467,24 @@ allowed-tools: string[]   # required — Read | Write | Bash | WebSearch
               {
                 name: "gitagent", color: "#00ff88",
                 desc: "The open specification format for AI agents. Defines how agent.yaml, SOUL.md, RULES.md, and skill files are structured. Version-controlled, human-readable, and tool-agnostic.",
-                commands: ["# No install needed — it's a file format spec"],
+                commands: ["# Validate your agent repo (no global install needed)\nnpx gitagent validate\nnpx gitagent info"],
               },
               {
                 name: "gitclaw", color: "#ffb800",
-                desc: "The runtime that executes gitagent repositories. Reads your agent.yaml, loads the soul and rules into the system prompt, and activates skills based on context.",
+                desc: "The SDK runtime that turns your gitagent repo into a running agent. Reads agent.yaml, loads SOUL.md and RULES.md into the system prompt, and activates skills from the skills/ directory.",
                 commands: [
-                  "gitclaw validate ./my-agent   # validate spec compliance",
-                  "gitclaw run ./my-agent        # run agent locally",
-                  "gitclaw run ./my-agent --port 8080",
+                  "npm install gitclaw",
+                  "# gitclaw reads your repo and creates a fully functional AI agent",
+                  "# See the gitclaw README for full SDK docs, examples, and API reference",
                 ],
               },
               {
                 name: "clawless", color: "#00d4ff",
-                desc: "Serverless deployment layer for gitagent. Packages your agent as a serverless function and deploys it to the cloud. No infrastructure management required.",
+                desc: "Serverless runtime powered by WebContainers. Runs your agent in the browser with zero infrastructure. Important: WebContainer environment only — Node.js/npm skills work, but no Python, no system binaries, no Docker.",
                 commands: [
-                  "clawless deploy ./my-agent    # deploy to cloud",
-                  "clawless status ./my-agent    # check deployment status",
-                  "clawless logs ./my-agent      # stream live logs",
+                  "npm install clawless",
+                  "# Skills must be Node-compatible (node / npx commands work)",
+                  "# If your skill needs python or apt-get, use gitclaw instead",
                 ],
               },
             ].map((tool, i) => (
@@ -553,7 +567,7 @@ allowed-tools: string[]   # required — Read | Write | Bash | WebSearch
               },
               {
                 q: "Can I edit the generated files manually?",
-                a: "Yes. The generated files are plain text (YAML and Markdown). You can edit them in any text editor after downloading. Just make sure they remain spec-compliant — run `gitclaw validate` to check.",
+                a: "Yes. The generated files are plain text (YAML and Markdown). You can edit them in any text editor after downloading. Just make sure they remain spec-compliant — run `npx gitagent validate` to check.",
               },
               {
                 q: "What Claude models are supported?",
@@ -569,7 +583,7 @@ allowed-tools: string[]   # required — Read | Write | Bash | WebSearch
               },
               {
                 q: "Can I import an existing agent.yaml?",
-                a: "Not directly through the UI yet. However, you can use the URL sharing feature — if you encode an existing agent state into the URL format, it will load correctly.",
+                a: "Yes — use the Import YAML button in the builder toolbar. Paste your agent.yaml content or upload the file directly. The manifest fields (name, version, description, model, tags) will be imported into the builder.",
               },
               {
                 q: "Is the gitagent spec versioned?",

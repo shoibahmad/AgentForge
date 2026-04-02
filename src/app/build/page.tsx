@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Terminal, ChevronLeft, ChevronRight, Check, Layers, Upload, Clock, Undo2, Redo2, HelpCircle } from "lucide-react";
 import Link from "next/link";

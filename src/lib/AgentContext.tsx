@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useCallback } from "react";
 
 export type ModelId =
   | "claude-sonnet-4-5-20250929"
@@ -267,7 +267,6 @@ interface ContextType {
 const AgentContext = createContext<ContextType | null>(null);
 
 const STORAGE_KEY = "agentforge_state";
-const HISTORY_KEY = "agentforge_history";
 const RECENT_KEY = "agentforge_recent";
 const MAX_HISTORY = 50;
 const MAX_RECENT = 10;
