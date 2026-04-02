@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Terminal, ChevronLeft, ChevronRight, Check, Layers, Upload, Clock, Undo2, Redo2, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import { useAgent, STEPS, decodeStateFromUrl } from "@/lib/AgentContext";
+import { useAgent, STEPS, decodeStateFromUrl, saveToRecent } from "@/lib/AgentContext";
 import StepManifest from "@/components/steps/StepManifest";
 import StepSoul from "@/components/steps/StepSoul";
 import StepRules from "@/components/steps/StepRules";
 import StepSkills from "@/components/steps/StepSkills";
 import StepGenerate from "@/components/steps/StepGenerate";
+import TemplatesModal from "@/components/TemplatesModal";
+import ImportYamlModal from "@/components/ImportYamlModal";
+import RecentAgentsPanel from "@/components/RecentAgentsPanel";
+import InteractiveTour, { useTour } from "@/components/InteractiveTour";
+import { StepValidationDot } from "@/components/ValidationBadge";
 import { Suspense } from "react";
 
 const slideVariants = {
@@ -20,10 +25,14 @@ const slideVariants = {
 };
 
 function BuildPageInner() {
-  const { state, dispatch } = useAgent();
-  const router = useRouter();
+  const { state, dispatch, canUndo, canRedo } = useAgent();
   const searchParams = useSearchParams();
   const step = state.currentStep;
+  const { show: showTour, setShow: setShowTour } = useTour();
+
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showRecent, setShowRecent] = useState(false);
 
   useEffect(() => {
     const config = searchParams.get("config");
@@ -32,6 +41,29 @@ function BuildPageInner() {
       if (decoded) dispatch({ type: "LOAD_STATE", state: decoded });
     }
   }, [searchParams, dispatch]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (e.key === "z" && !e.shiftKey) { e.preventDefault(); dispatch({ type: "UNDO" }); }
+      if (e.key === "y" || (e.key === "z" && e.shiftKey)) { e.preventDefault(); dispatch({ type: "REDO" }); }
+      if (e.key === "Enter") { e.preventDefault(); goTo(step + 1); }
+      if (e.key === "d") {
+        e.preventDefault();
+        // trigger download from StepGenerate — dispatch a custom event
+        window.dispatchEvent(new CustomEvent("agentforge:download"));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [step, dispatch]);
+
+  // Save to recent when on generate step
+  useEffect(() => {
+    if (step === 4 && state.name.trim()) saveToRecent(state);
+  }, [step]);
 
   const goTo = (s: number) => {
     if (s < 0 || s >= STEPS.length) return;
@@ -50,10 +82,16 @@ function BuildPageInner() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
+      {/* Modals */}
+      {showTemplates && <TemplatesModal onClose={() => setShowTemplates(false)} />}
+      {showImport && <ImportYamlModal onClose={() => setShowImport(false)} />}
+      {showRecent && <RecentAgentsPanel onClose={() => setShowRecent(false)} />}
+      {showTour && <InteractiveTour onClose={() => setShowTour(false)} />}
+
       {/* Header */}
       <header style={{
         borderBottom: "1px solid var(--border)",
-        padding: "0 2rem",
+        padding: "0 1.25rem",
         height: "56px",
         display: "flex",
         alignItems: "center",
@@ -63,8 +101,9 @@ function BuildPageInner() {
         position: "sticky",
         top: 0,
         zIndex: 50,
+        gap: "0.75rem",
       }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", flexShrink: 0 }}>
           <Terminal size={18} color="var(--accent-green)" />
           <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1rem", color: "var(--text-primary)" }}>
             Agent<span style={{ color: "var(--accent-green)" }}>Forge</span>
@@ -78,10 +117,15 @@ function BuildPageInner() {
               <button
                 onClick={() => goTo(i)}
                 className={`step-indicator ${i < step ? "complete" : i === step ? "active" : "inactive"}`}
-                style={{ cursor: "pointer", border: "none", background: undefined }}
+                style={{ cursor: "pointer", border: "none", background: undefined, position: "relative" }}
                 title={s.label}
               >
                 {i < step ? <Check size={12} /> : i + 1}
+                {i !== step && (
+                  <span style={{ position: "absolute", top: -3, right: -3 }}>
+                    <StepValidationDot state={state} stepIndex={i} />
+                  </span>
+                )}
               </button>
               {i < STEPS.length - 1 && (
                 <div style={{
@@ -94,8 +138,28 @@ function BuildPageInner() {
           ))}
         </div>
 
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-          {STEPS[step].label}
+        {/* Right toolbar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.5rem", fontSize: "0.72rem" }} title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={() => dispatch({ type: "UNDO" })}>
+            <Undo2 size={14} style={{ opacity: canUndo ? 1 : 0.3 }} />
+          </button>
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.5rem", fontSize: "0.72rem" }} title="Redo (Ctrl+Y)" disabled={!canRedo} onClick={() => dispatch({ type: "REDO" })}>
+            <Redo2 size={14} style={{ opacity: canRedo ? 1 : 0.3 }} />
+          </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 0.2rem" }} />
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem", fontSize: "0.72rem" }} title="Templates" onClick={() => setShowTemplates(true)}>
+            <Layers size={14} />
+            <span style={{ display: "none" }}>Templates</span>
+          </button>
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem", fontSize: "0.72rem" }} title="Import YAML" onClick={() => setShowImport(true)}>
+            <Upload size={14} />
+          </button>
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem", fontSize: "0.72rem" }} title="Recent agents" onClick={() => setShowRecent(true)}>
+            <Clock size={14} />
+          </button>
+          <button className="btn-ghost" style={{ padding: "0.3rem 0.6rem", fontSize: "0.72rem" }} title="Tour" onClick={() => setShowTour(true)}>
+            <HelpCircle size={14} />
+          </button>
         </div>
       </header>
 
@@ -126,9 +190,11 @@ function BuildPageInner() {
               cursor: "pointer",
               whiteSpace: "nowrap",
               transition: "all var(--transition)",
+              display: "flex", alignItems: "center", gap: "0.4rem",
             }}
           >
             {i < step ? "✓ " : ""}{s.label}
+            {i !== step && <StepValidationDot state={state} stepIndex={i} />}
           </button>
         ))}
       </div>
@@ -171,7 +237,7 @@ function BuildPageInner() {
           </button>
 
           <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            Step {step + 1} of {STEPS.length}
+            Step {step + 1} of {STEPS.length} · <kbd style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: "3px", padding: "0.1rem 0.3rem" }}>Ctrl+Enter</kbd> to advance
           </span>
 
           <button className="btn-primary" onClick={() => goTo(step + 1)}>

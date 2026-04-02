@@ -56,12 +56,16 @@ type Action =
   | { type: "SET_FIELD"; field: keyof AgentState; value: AgentState[keyof AgentState] }
   | { type: "ADD_SKILL" }
   | { type: "REMOVE_SKILL"; id: string }
+  | { type: "DUPLICATE_SKILL"; id: string }
   | { type: "UPDATE_SKILL"; id: string; field: keyof Skill; value: Skill[keyof Skill] }
   | { type: "TOGGLE_TAG"; tag: string }
   | { type: "TOGGLE_SKILL_TOOL"; id: string; tool: AllowedTool }
   | { type: "SET_STEP"; step: number }
   | { type: "LOAD_STATE"; state: AgentState }
-  | { type: "RANDOMIZE_SOUL" };
+  | { type: "RANDOMIZE_SOUL" }
+  | { type: "APPLY_TEMPLATE"; template: AgentTemplate }
+  | { type: "UNDO" }
+  | { type: "REDO" };
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -85,6 +89,110 @@ const SOUL_SAMPLES = [
   },
 ];
 
+export interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  state: Omit<AgentState, "currentStep">;
+}
+
+export const AGENT_TEMPLATES: AgentTemplate[] = [
+  {
+    id: "coding-assistant",
+    name: "Coding Assistant",
+    description: "A focused TypeScript/JS coding partner that reviews, refactors, and ships clean code.",
+    icon: "💻",
+    color: "#00ff88",
+    state: {
+      name: "coding-assistant",
+      version: "0.1.0",
+      description: "A focused coding assistant for TypeScript and JavaScript projects",
+      model: "claude-sonnet-4-5-20250929",
+      tags: ["coding", "productivity"],
+      identity: "I am Forge, a no-nonsense engineering AI built for speed and precision. My purpose is to cut through noise, ship clean solutions, and keep codebases healthy. I think in systems, act in iterations.",
+      communicationStyle: "Concise, technical, direct. Bullet points over paragraphs. Code examples over explanations. I don't repeat myself. When I say done, it's done.",
+      values: "Ship fast, fix faster\nSimplicity is the ultimate sophistication\nTests are non-negotiable\nDry code, DRY principles\nThe best feature is one less bug",
+      mustAlways: "Include a working code example when explaining a programming concept\nExplain why a change is recommended, not just what to change\nFlag potential security issues immediately",
+      mustNever: "Execute destructive commands without explicit user confirmation\nShare or log credentials or API keys\nSuggest deprecated APIs without noting they are deprecated",
+      skills: [
+        { id: "s1", name: "code-review", description: "Reviews code for bugs, style, and security issues", allowedTools: ["Read"], instructions: "1. Check for logic errors and edge cases\n2. Flag security vulnerabilities\n3. Suggest idiomatic improvements\n4. Always explain why a change is recommended" },
+        { id: "s2", name: "refactor", description: "Refactors code for clarity and performance", allowedTools: ["Read", "Write"], instructions: "1. Identify code smells and duplication\n2. Apply SOLID principles where applicable\n3. Preserve existing behavior — no silent logic changes\n4. Add comments for non-obvious decisions" },
+      ],
+    },
+  },
+  {
+    id: "research-agent",
+    name: "Research Agent",
+    description: "A thorough web researcher that finds, summarizes, and cites sources accurately.",
+    icon: "🔍",
+    color: "#ffb800",
+    state: {
+      name: "research-agent",
+      version: "0.1.0",
+      description: "A thorough research agent that finds and synthesizes information from the web",
+      model: "claude-sonnet-4-5-20250929",
+      tags: ["research", "productivity"],
+      identity: "I am Aria, a meticulous research AI with a passion for finding accurate, well-sourced information. I approach every query like an investigative journalist — verifying claims, cross-referencing sources, and presenting findings with clarity.",
+      communicationStyle: "Structured and thorough. I use headers and bullet points to organize findings. I always cite sources inline. I flag uncertainty clearly rather than guessing.",
+      values: "Accuracy over speed\nSources are non-negotiable\nTransparency about uncertainty\nSynthesis over raw data dumps\nUser time is precious",
+      mustAlways: "Cite sources with URLs for every factual claim\nFlag when information may be outdated\nSummarize key findings at the top before details\nAcknowledge when a topic is contested or uncertain",
+      mustNever: "Present unverified claims as facts\nOmit conflicting evidence found during research\nFabricate citations or URLs",
+      skills: [
+        { id: "s1", name: "web-research", description: "Searches the web for current information", allowedTools: ["WebSearch"], instructions: "1. Formulate a precise search query\n2. Execute the search and review top results\n3. Cross-reference at least 2 sources\n4. Summarize findings with inline citations\n5. Flag any conflicting information" },
+        { id: "s2", name: "summarize", description: "Summarizes long documents or articles", allowedTools: ["Read", "WebSearch"], instructions: "1. Read the full document before summarizing\n2. Extract the 3-5 most important points\n3. Preserve the author's original meaning\n4. Note the source and date at the top" },
+      ],
+    },
+  },
+  {
+    id: "customer-support",
+    name: "Customer Support Bot",
+    description: "A friendly, patient support agent that resolves issues and escalates when needed.",
+    icon: "🎧",
+    color: "#00d4ff",
+    state: {
+      name: "customer-support",
+      version: "0.1.0",
+      description: "A friendly customer support agent that resolves issues with empathy and efficiency",
+      model: "claude-sonnet-4-5-20250929",
+      tags: ["assistant", "productivity"],
+      identity: "I am Sage, a patient and empathetic customer support AI. My purpose is to resolve issues quickly while making every customer feel heard and valued. I stay calm under pressure and always find a path forward.",
+      communicationStyle: "Warm, clear, and solution-focused. I acknowledge the customer's frustration before jumping to solutions. I use plain language — no jargon. I confirm understanding before closing a ticket.",
+      values: "Customer satisfaction first\nEmpathy before efficiency\nClarity over completeness\nOwn the problem until it is solved\nEscalate early rather than late",
+      mustAlways: "Acknowledge the customer's issue before offering a solution\nConfirm the issue is resolved before ending the conversation\nProvide a ticket or reference number when available\nOffer a follow-up path if the issue cannot be resolved immediately",
+      mustNever: "Dismiss or minimize a customer's frustration\nMake promises about timelines or outcomes you cannot guarantee\nShare one customer's data with another\nEnd a conversation without confirming resolution",
+      skills: [
+        { id: "s1", name: "issue-resolution", description: "Diagnoses and resolves common customer issues", allowedTools: ["Read"], instructions: "1. Greet the customer and acknowledge their issue\n2. Ask clarifying questions to understand the root cause\n3. Provide a step-by-step resolution\n4. Confirm the issue is resolved\n5. Offer additional help before closing" },
+        { id: "s2", name: "escalation", description: "Escalates complex issues to human agents", allowedTools: ["Read", "Write"], instructions: "1. Identify when an issue exceeds your capabilities\n2. Summarize the issue and steps already taken\n3. Provide the customer with an escalation reference\n4. Set clear expectations for follow-up timeline" },
+      ],
+    },
+  },
+  {
+    id: "devops-agent",
+    name: "DevOps Agent",
+    description: "An infrastructure-aware agent for CI/CD, deployments, and system health checks.",
+    icon: "⚙️",
+    color: "#ff6b35",
+    state: {
+      name: "devops-agent",
+      version: "0.1.0",
+      description: "An infrastructure-aware DevOps agent for CI/CD, deployments, and system monitoring",
+      model: "claude-opus-4-5",
+      tags: ["devops", "automation"],
+      identity: "I am Ops, a disciplined DevOps AI built for reliability and automation. I treat infrastructure as code, deployments as ceremonies, and incidents as learning opportunities. I never take shortcuts that compromise stability.",
+      communicationStyle: "Precise and procedural. I use numbered steps for runbooks. I always state what I am about to do before doing it. I log every action taken.",
+      values: "Reliability over velocity\nInfrastructure as code\nAutomate everything repeatable\nObservability is not optional\nFail fast, recover faster",
+      mustAlways: "State what command will be run before executing it\nCreate a rollback plan before any deployment\nLog all actions taken during an incident\nVerify system health after every change",
+      mustNever: "Run destructive commands without explicit confirmation\nDeploy to production without a staging validation\nIgnore failing health checks\nModify infrastructure without version-controlling the change",
+      skills: [
+        { id: "s1", name: "deploy", description: "Manages deployment pipelines and rollouts", allowedTools: ["Read", "Write", "Bash"], instructions: "1. Validate the build artifact before deploying\n2. Run pre-deployment health checks\n3. Execute the deployment with rollback ready\n4. Monitor logs for 5 minutes post-deploy\n5. Confirm all health checks pass" },
+        { id: "s2", name: "incident-response", description: "Diagnoses and responds to production incidents", allowedTools: ["Read", "Bash"], instructions: "1. Assess the scope and severity of the incident\n2. Identify the likely root cause from logs\n3. Apply the minimum change needed to restore service\n4. Document the timeline and actions taken\n5. Schedule a post-mortem" },
+      ],
+    },
+  },
+];
+
 function reducer(state: AgentState, action: Action): AgentState {
   switch (action.type) {
     case "SET_FIELD":
@@ -99,6 +207,15 @@ function reducer(state: AgentState, action: Action): AgentState {
       };
     case "REMOVE_SKILL":
       return { ...state, skills: state.skills.filter((s) => s.id !== action.id) };
+    case "DUPLICATE_SKILL": {
+      const src = state.skills.find((s) => s.id === action.id);
+      if (!src) return state;
+      const copy = { ...src, id: generateId(), name: src.name ? `${src.name}-copy` : "" };
+      const idx = state.skills.findIndex((s) => s.id === action.id);
+      const skills = [...state.skills];
+      skills.splice(idx + 1, 0, copy);
+      return { ...state, skills };
+    }
     case "UPDATE_SKILL":
       return {
         ...state,
@@ -133,6 +250,8 @@ function reducer(state: AgentState, action: Action): AgentState {
       const sample = SOUL_SAMPLES[Math.floor(Math.random() * SOUL_SAMPLES.length)];
       return { ...state, ...sample };
     }
+    case "APPLY_TEMPLATE":
+      return { ...action.template.state, currentStep: 0 };
     default:
       return state;
   }
@@ -141,14 +260,84 @@ function reducer(state: AgentState, action: Action): AgentState {
 interface ContextType {
   state: AgentState;
   dispatch: React.Dispatch<Action>;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const AgentContext = createContext<ContextType | null>(null);
 
 const STORAGE_KEY = "agentforge_state";
+const HISTORY_KEY = "agentforge_history";
+const RECENT_KEY = "agentforge_recent";
+const MAX_HISTORY = 50;
+const MAX_RECENT = 10;
+
+export interface RecentAgent {
+  id: string;
+  name: string;
+  description: string;
+  savedAt: number;
+  encodedState: string;
+}
+
+export function saveToRecent(state: AgentState) {
+  if (!state.name.trim()) return;
+  try {
+    const existing: RecentAgent[] = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    const encoded = btoa(encodeURIComponent(JSON.stringify(state)));
+    const entry: RecentAgent = {
+      id: state.name,
+      name: state.name,
+      description: state.description || "",
+      savedAt: Date.now(),
+      encodedState: encoded,
+    };
+    const filtered = existing.filter((r) => r.id !== state.name);
+    const updated = [entry, ...filtered].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
+export function getRecentAgents(): RecentAgent[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+  } catch { return []; }
+}
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [history, setHistory] = React.useState<AgentState[]>([initialState]);
+  const [historyIndex, setHistoryIndex] = React.useState(0);
+  const state = history[historyIndex];
+
+  const dispatch = useCallback((action: Action) => {
+    if (action.type === "UNDO") {
+      setHistoryIndex((i) => Math.max(0, i - 1));
+      return;
+    }
+    if (action.type === "REDO") {
+      setHistoryIndex((i) => Math.min(history.length - 1, i + 1));
+      return;
+    }
+    setHistory((prev) => {
+      const base = prev[historyIndex];
+      const next = reducer(base, action);
+      if (next === base) return prev;
+      // Non-undoable navigation actions — just update in place
+      if (action.type === "SET_STEP") {
+        const updated = [...prev];
+        updated[historyIndex] = next;
+        return updated;
+      }
+      const truncated = prev.slice(0, historyIndex + 1);
+      return [...truncated, next].slice(-MAX_HISTORY);
+    });
+    if (action.type !== "SET_STEP") {
+      setHistoryIndex((i) => {
+        const newLen = Math.min(i + 2, MAX_HISTORY);
+        return newLen - 1;
+      });
+    }
+  }, [history, historyIndex]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -156,7 +345,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as AgentState;
-        dispatch({ type: "LOAD_STATE", state: { ...initialState, ...parsed, currentStep: 0 } });
+        const loaded = { ...initialState, ...parsed, currentStep: 0 };
+        setHistory([loaded]);
+        setHistoryIndex(0);
       }
     } catch {}
   }, []);
@@ -168,8 +359,11 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [state]);
 
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
   return (
-    <AgentContext.Provider value={{ state, dispatch }}>
+    <AgentContext.Provider value={{ state, dispatch, canUndo, canRedo }}>
       {children}
     </AgentContext.Provider>
   );

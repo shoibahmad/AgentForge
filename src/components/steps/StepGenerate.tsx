@@ -1,7 +1,7 @@
 "use client";
 
 import { useAgent, generateAllFiles, encodeStateToUrl } from "@/lib/AgentContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Download, Copy, Check, Share2, Package,
   File, Folder, FolderOpen, Terminal as TerminalIcon, ChevronLeft
@@ -116,6 +116,13 @@ export default function StepGenerate() {
   const [shared, setShared] = useState(false);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(["skills"]));
 
+  // Ctrl+D keyboard shortcut
+  useEffect(() => {
+    const handler = (e: Event) => { downloadZip(); };
+    window.addEventListener("agentforge:download", handler);
+    return () => window.removeEventListener("agentforge:download", handler);
+  }, []);
+
   const tree = buildTree(files);
   const currentFile = files.find((f) => f.path === selectedFile);
 
@@ -152,6 +159,11 @@ export default function StepGenerate() {
       a.download = `${state.name || "my-agent"}.zip`;
       a.click();
       URL.revokeObjectURL(url);
+      // Increment health score counter
+      try {
+        const prev = parseInt(localStorage.getItem("agentforge_built_count") || "0", 10);
+        localStorage.setItem("agentforge_built_count", String(prev + 1));
+      } catch {}
     } finally {
       setTimeout(() => setDownloading(false), 1000);
     }
@@ -168,9 +180,10 @@ export default function StepGenerate() {
 
   const agentName = state.name || "my-agent";
   const deployCommands = [
-    { comment: "# Unzip your downloaded agent", cmd: `Expand-Archive ${agentName}.zip -DestinationPath ./${agentName}` },
-    { comment: "# Validate with local validator (no install needed)", cmd: `node gitagent-validate.js ./${agentName}` },
-    { comment: "# Or run the agent once gitclaw is available", cmd: `gitclaw run ./${agentName}` },
+    { comment: "# Unzip your downloaded agent", cmd: `unzip ${agentName}.zip -d ./${agentName}` },
+    { comment: "# Validate the agent spec", cmd: `gitclaw validate ./${agentName}` },
+    { comment: "# Run locally", cmd: `gitclaw run ./${agentName}` },
+    { comment: "# Deploy to serverless cloud", cmd: `clawless deploy ./${agentName}` },
   ];
 
   return (

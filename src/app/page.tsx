@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Terminal, Zap, Download, GitBranch, Layers, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import type { Variants } from "framer-motion";
 
@@ -73,6 +74,24 @@ const concepts = [
 ];
 
 export default function LandingPage() {
+  const [agentsBuilt, setAgentsBuilt] = useState(0);
+
+  useEffect(() => {
+    try {
+      const count = parseInt(localStorage.getItem("agentforge_built_count") || "0", 10);
+      // Animate counter up
+      let i = 0;
+      const target = count;
+      if (target === 0) return;
+      const step = Math.max(1, Math.floor(target / 40));
+      const timer = setInterval(() => {
+        i = Math.min(i + step, target);
+        setAgentsBuilt(i);
+        if (i >= target) clearInterval(timer);
+      }, 30);
+      return () => clearInterval(timer);
+    } catch {}
+  }, []);
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       {/* Nav */}
@@ -96,8 +115,9 @@ export default function LandingPage() {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <a href="#concepts" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none" }}>Docs</a>
-          <a href="#features" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none" }}>Features</a>
+          <Link href="/docs" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none" }}>Docs</Link>
+          <Link href="/features" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none" }}>Features</Link>
+          <Link href="/changelog" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none" }}>Changelog</Link>
           <Link href="/build">
             <button className="btn-primary" style={{ padding: "0.4rem 1rem", fontSize: "0.8rem" }}>
               Start Building
@@ -131,6 +151,11 @@ export default function LandingPage() {
             }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent-green)", display: "inline-block" }} />
               gitagent spec v0.1.0 — ready to build
+              {agentsBuilt > 0 && (
+                <span style={{ marginLeft: "0.5rem", paddingLeft: "0.5rem", borderLeft: "1px solid var(--accent-green-border)", color: "var(--accent-green)" }}>
+                  {agentsBuilt} agent{agentsBuilt !== 1 ? "s" : ""} built
+                </span>
+              )}
             </div>
           </motion.div>
 

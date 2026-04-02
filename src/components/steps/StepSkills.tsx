@@ -1,7 +1,7 @@
 "use client";
 
 import { useAgent, ALL_TOOLS, AllowedTool } from "@/lib/AgentContext";
-import { Plus, Trash2, Wrench, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Wrench, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { useState } from "react";
 
 const TOOL_COLORS: Record<AllowedTool, string> = {
@@ -109,6 +109,14 @@ export default function StepSkills() {
                 )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <button
+                  className="btn-ghost"
+                  style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}
+                  title="Duplicate skill"
+                  onClick={(e) => { e.stopPropagation(); dispatch({ type: "DUPLICATE_SKILL", id: skill.id }); }}
+                >
+                  <Copy size={13} />
+                </button>
                 <button
                   className="btn-danger"
                   style={{ padding: "0.25rem 0.5rem" }}
